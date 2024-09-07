@@ -95,9 +95,10 @@ class App(customtkinter.CTk):
     # reset button
     def sidebar_button1_event(self):
         if tkinter.messagebox.askyesno(title = 'Reset', message = 'Do you really want to reset the roster?'):
-            for name_label, days_label in self.scrollable_frame_entries:
+            for name_label, days_label, button in self.scrollable_frame_entries:
                 name_label.destroy()
                 days_label.destroy()
+                button.destroy()
 
         # Clear the list
             self.scrollable_frame_entries.clear()
