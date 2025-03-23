@@ -1,8 +1,9 @@
 import tkinter
 import tkinter.messagebox
 import customtkinter
-from tkinter import filedialog
+from tkinter import filedialog, Label
 import createPlan
+import import_roster as ir
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue")
 
@@ -30,6 +31,8 @@ class App(customtkinter.CTk):
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
         self.sidebar_button_2 = customtkinter.CTkButton(text='Reset', master=self.sidebar_frame, command=self.sidebar_button1_event)
         self.sidebar_button_2.grid(row=2, column=0, padx=20, pady=10)
+        self.sidebar_button_3 = customtkinter.CTkButton(text='Import', master=self.sidebar_frame, command=self.sidebar_event_export)
+        self.sidebar_button_3.grid(row=3, column=0, padx=20, pady=10)
         self.appearance_mode_label = customtkinter.CTkLabel(self.sidebar_frame, text="Appearance Mode:", anchor="w")
         self.appearance_mode_label.grid(row=5, column=0, padx=20, pady=(10, 0))
         self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["Light", "Dark", "System"],
@@ -53,13 +56,20 @@ class App(customtkinter.CTk):
         self.main_button_1 = customtkinter.CTkButton(text='Add', master=self, fg_color="transparent", border_width=2, text_color=("gray10", "#DCE4EE"), command=self.add_button_event)
         self.main_button_1.grid(row=3, column=3, padx=(20, 20), pady=(20, 20), sticky="nsew")
 
-        # create scrollable frame
-        self.scrollable_frame = customtkinter.CTkScrollableFrame(self, label_text="Current Roster")
+        # Create a StringVar to hold the counter value
+        self.entry_counter = tkinter.StringVar(value="0")
+
+        # Create scrollable frame with a counter
+        self.scrollable_frame = customtkinter.CTkScrollableFrame(self, label_text="Current Roster (Entries: 0)")
         self.scrollable_frame.grid(row=0, rowspan=3, column=1, columnspan=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
         self.scrollable_frame.grid_columnconfigure(0, weight=1)  # Name column
         self.scrollable_frame.grid_columnconfigure(1, weight=1)  # Padding column (if needed)
         self.scrollable_frame.grid_columnconfigure(2, weight=1)  # Padding column (if needed)
         self.scrollable_frame.grid_columnconfigure(3, weight=1)  # Days column
+
+        # Update the label dynamically
+        self.scrollable_frame.configure(label_text=f"Current Roster (Entries: {self.entry_counter.get()})")
+
         # list to hold dynamically added entries
         self.scrollable_frame_entries = []
         self.totalAmountofDaysEntry = 0
@@ -111,19 +121,26 @@ class App(customtkinter.CTk):
         days = self.entry_days.get()
 
         if name and days and days.isdigit() and int(days) < 8:  # Only add entry if both fields have values
-            # Create new labels in the scrollable frame
-            new_label_name = customtkinter.CTkLabel(master=self.scrollable_frame, text=name, width=200, anchor="w")
-            new_label_name.grid(row=len(self.scrollable_frame_entries), column=0, columnspan = 1, padx=10, pady=(0, 10), sticky="ew")
+            # Create new editable entries in the scrollable frame
+            new_entry_name = customtkinter.CTkEntry(master=self.scrollable_frame, width=200)
+            new_entry_name.insert(0, name)  # Set the initial value
+            new_entry_name.grid(row=len(self.scrollable_frame_entries), column=0, columnspan=1, padx=10, pady=(0, 10), sticky="ew")
 
-            new_label_days = customtkinter.CTkLabel(master=self.scrollable_frame, text=days, width=100, anchor="w")
-            new_label_days.grid(row=len(self.scrollable_frame_entries), column=3, padx=10, pady=(0, 0), sticky="ew")
+            new_entry_days = customtkinter.CTkEntry(master=self.scrollable_frame, width=100)
+            new_entry_days.insert(0, days)  # Set the initial value
+            new_entry_days.grid(row=len(self.scrollable_frame_entries), column=3, padx=10, pady=(0, 0), sticky="ew")
 
             new_button_delete = customtkinter.CTkButton(master=self.scrollable_frame, text="Delete", command=lambda index=len(self.scrollable_frame_entries): self.delete_entry(index))
             new_button_delete.grid(row=len(self.scrollable_frame_entries), column=4, padx=10, pady=(0, 0), sticky="ew")
             
-            # Add labels to the list
-            self.scrollable_frame_entries.append((new_label_name, new_label_days, new_button_delete))
+            # Add entries to the list
+            self.scrollable_frame_entries.append((new_entry_name, new_entry_days, new_button_delete))
             self.totalAmountofDaysEntry += int(days)
+
+            # Update the counter
+            self.entry_counter.set(str(len(self.scrollable_frame_entries)))
+            self.scrollable_frame.configure(label_text=f"Current Roster (Entries: {self.entry_counter.get()})")
+
             # Clear the input fields after adding
             self.entry_name.delete(0, 'end')
             self.entry_days.delete(0, 'end')
@@ -140,16 +157,16 @@ class App(customtkinter.CTk):
         if 0 <= index < len(self.scrollable_frame_entries):
         # Get the entry to delete
             name_label, days_label, delete_button = self.scrollable_frame_entries[index]
-            #print(index)
-        # Subtract the days from the total
-            self.totalAmountofDaysEntry -= int(days_label.cget("text"))
 
-        # Hide the widgets instead of destroying
+        # Subtract the days from the total
+            self.totalAmountofDaysEntry -= int(days_label.get())
+
+        # Destroy the widgets
             name_label.destroy()
             days_label.destroy()
             delete_button.destroy()
 
-        # Remove the entry from the list
+        # Remove the entry from the list 
             del self.scrollable_frame_entries[index]
 
         # Re-grid the remaining entries to fill the gap
@@ -167,9 +184,21 @@ class App(customtkinter.CTk):
             tkinter.messagebox.showwarning("Big Error (should not happen)", f"Invalid index: {index}. Cannot delete entry. Please contact the author")
             #print(f"Invalid index: {index}. Cannot delete entry.")
 
+        # Update the counter
+        self.entry_counter.set(str(len(self.scrollable_frame_entries)))
+        self.scrollable_frame.configure(label_text=f"Current Roster (Entries: {self.entry_counter.get()})")
+
     def shortcut(self, event):
         if event.keysym == "Return":
             self.add_button_event()
+
+    #import
+    def sidebar_event_export(self):
+        roster_path = filedialog.askopenfilename(title="Import", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
+        if(roster_path):
+            #self.show_confirmation_window(roster_path)
+            ir.confirm_upload(self, roster_path)
+        
 
 if __name__ == "__main__":
     app = App()
