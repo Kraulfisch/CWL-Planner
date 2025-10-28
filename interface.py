@@ -84,8 +84,19 @@ class App(customtkinter.CTk):
         #print(new_scaling)
         pass
 
+    def recalculate_total_days(self):
+        """Recalculate total days from all entries"""
+        self.totalAmountofDaysEntry = 0
+        for name_entry, days_entry, _ in self.scrollable_frame_entries:
+            days_text = days_entry.get()
+            if days_text.isdigit():
+                self.totalAmountofDaysEntry += int(days_text)
+
     # generate button
     def sidebar_button0_event(self):
+        # Recalculate total days before generating to catch any manual edits
+        self.recalculate_total_days()
+        
         self.totalAmoutofDaysNeeded = int(self.scaling_optionemenu.get()) * 7
         self.diff = self.totalAmountofDaysEntry - int(self.totalAmoutofDaysNeeded)
         if (self.diff == 0):
@@ -113,6 +124,10 @@ class App(customtkinter.CTk):
         # Clear the list
             self.scrollable_frame_entries.clear()
             self.totalAmountofDaysEntry = 0
+            
+            # Update the counter
+            self.entry_counter.set("0")
+            self.scrollable_frame.configure(label_text=f"Current Roster (Entries: 0)")
     
     # add button
     def add_button_event(self):
@@ -120,7 +135,7 @@ class App(customtkinter.CTk):
         name = self.entry_name.get()
         days = self.entry_days.get()
 
-        if name and days and days.isdigit() and int(days) < 8:  # Only add entry if both fields have values
+        if name and days and days.isdigit() and int(days) < 8 and int(days) > 0:  # Only add entry if both fields have values
             # Create new editable entries in the scrollable frame
             new_entry_name = customtkinter.CTkEntry(master=self.scrollable_frame, width=200)
             new_entry_name.insert(0, name)  # Set the initial value
@@ -147,8 +162,10 @@ class App(customtkinter.CTk):
 
             self.entry_name.focus()
 
-        elif days: 
-            tkinter.messagebox.showwarning("Input Error", "Please enter a valid number of days")
+        elif not name:
+            tkinter.messagebox.showwarning("Input Error", "Please enter a name.")
+        elif not days or not days.isdigit() or int(days) < 1 or int(days) > 7:
+            tkinter.messagebox.showwarning("Input Error", "Please enter a valid number of days (1-7).")
         else:
             tkinter.messagebox.showwarning("Input Error", "Please enter both Name and Days.")
     
@@ -159,7 +176,9 @@ class App(customtkinter.CTk):
             name_label, days_label, delete_button = self.scrollable_frame_entries[index]
 
         # Subtract the days from the total
-            self.totalAmountofDaysEntry -= int(days_label.get())
+            days_text = days_label.get()
+            if days_text.isdigit():
+                self.totalAmountofDaysEntry -= int(days_text)
 
         # Destroy the widgets
             name_label.destroy()

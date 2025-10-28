@@ -12,18 +12,20 @@ def addEntrys(interface, roster_path):
             tkinter.messagebox.showerror("Error", "The Excel file is empty or does not have a valid first column.")
             return
 
+        imported_count = 0
         # Iterate through the rows and add each name as an entry
         for index, row in df.iterrows():
             name = str(row[df.columns[0]])  # Get the name from the first column
-            if pd.notna(name):  # Ensure the name is not NaN
+            if pd.notna(name) and name.strip():  # Ensure the name is not NaN and not empty
                 # Add the name with default days (e.g., 1 day)
                 interface.entry_name.delete(0, 'end')
-                interface.entry_name.insert(0, name)
+                interface.entry_name.insert(0, name.strip())
                 interface.entry_days.delete(0, 'end')
                 interface.entry_days.insert(0, '1')  # Default days
                 interface.add_button_event()
+                imported_count += 1
 
-        tkinter.messagebox.showinfo("Upload Confirmed", f"Successfully imported {len(df)} entries from the file: {roster_path}")
+        tkinter.messagebox.showinfo("Upload Confirmed", f"Successfully imported {imported_count} entries from the file.")
 
     except Exception as e:
         tkinter.messagebox.showerror("Error", f"Failed to import roster: {str(e)}")
@@ -67,4 +69,3 @@ def show_confirmation_window(interface, file_path):
 def confirm_upload(interface, roster_path):
         print(f"File: {roster_path}")
         addEntrys(interface, roster_path)
-

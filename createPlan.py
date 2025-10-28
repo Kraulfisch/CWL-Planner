@@ -122,17 +122,31 @@ def create_excel_plan(roster_entries, size, file_path="roster_plan.xlsx"):
     players = []
     start = 0
     for entry in roster_entries:
-        name_label, days_label, _ = entry  # Ignore the delete button
-        name = name_label.cget("text")
-        days = days_label.cget("text")
-        #print(days)
-        new_player = Player(name, int(days))
-        if(int(days) == 7): start += 1
+        name_entry, days_entry, _ = entry  # Ignore the delete button
+        # Changed from cget("text") to get() since these are CTkEntry widgets
+        name = name_entry.get()
+        days_str = days_entry.get()
+        
+        # Validate the days input
+        if not days_str.isdigit():
+            continue
+            
+        days = int(days_str)
+        
+        # Skip invalid entries
+        if days < 1 or days > 7:
+            continue
+            
+        new_player = Player(name, days)
+        if days == 7: 
+            start += 1
         players.append(new_player)
-        #print(start)
+    
+    # Check if we have enough players
+    if len(players) < size:
+        raise ValueError(f"Not enough valid players. Need {size}, but only have {len(players)}.")
     
     df = create_dataframe(players, size, start)
-    #print(df)
     color_df(df, start, players, size, file_path)
 
     #print(f"Excel file created successfully at {file_path}")
